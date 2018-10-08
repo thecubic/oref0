@@ -19,25 +19,27 @@
 
 */
 
-var generate = require('oref0/lib/meal');
-function usage ( ) {
-        console.error('usage: ', process.argv.slice(0, 2), '<pumphistory.json> <profile.json> <clock.json> <glucose.json> <basalprofile.json> [carbhistory.json]');
-}
+var generate = require('../lib/meal');
 
 if (!module.parent) {
-    var pumphistory_input = process.argv.slice(2, 3).pop();
-    if ([null, '--help', '-h', 'help'].indexOf(pumphistory_input) > 0) {
-      usage( );
-      process.exit(0)
-    }
-    var profile_input = process.argv.slice(3, 4).pop();
-    var clock_input = process.argv.slice(4, 5).pop();
-    var glucose_input = process.argv.slice(5, 6).pop();
-    var basalprofile_input = process.argv.slice(6, 7).pop();
-    var carb_input = process.argv.slice(7, 8).pop()
+    var argv = require('yargs')
+      .usage('$0 <pumphistory.json> <profile.json> <clock.json> <glucose.json> <basalprofile.json> [<carbhistory.json>]')
+      // error and show help if some other args given
+      .strict(true)
+      .help('help');
 
-    if (!pumphistory_input || !profile_input || !clock_input || !glucose_input || !basalprofile_input) {
-        usage( );
+    var params = argv.argv;
+    var inputs = params._;
+
+    var pumphistory_input = inputs[0];
+    var profile_input = inputs[1];
+    var clock_input = inputs[2];
+    var glucose_input = inputs[3];
+    var basalprofile_input = inputs[4];
+    var carb_input = inputs[5];
+
+    if (inputs.length < 5 || inputs.length > 6) {
+        argv.showHelp();
         console.log('{ "carbs": 0, "reason": "Insufficient arguments" }');
         process.exit(1);
     }
@@ -85,11 +87,6 @@ if (!module.parent) {
       basalprofile_data = temp;
     }
 
-    if (glucose_data.length < 36) {
-        console.error("Optional feature meal assist disabled: not enough glucose data to calculate carb absorption; found:", glucose_data.length);
-        return console.log('{ "carbs": 0, "reason": "not enough glucose data to calculate carb absorption" }');
-    }
-
     var inputs = {
         history: pumphistory_data
     , profile: profile_data
@@ -99,7 +96,14 @@ if (!module.parent) {
     , glucose: glucose_data
     };
 
-    var dia_carbs = generate(inputs);
-    console.log(JSON.stringify(dia_carbs));
+    var recentCarbs = generate(inputs);
+
+    if (glucose_data.length < 36) {
+        console.error("Not enough glucose data to calculate carb absorption; found:", glucose_data.length);
+        recentCarbs.mealCOB = 0;
+        recentCarbs.reason = "not enough glucose data to calculate carb absorption";
+    }
+
+    console.log(JSON.stringify(recentCarbs));
 }
 

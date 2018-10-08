@@ -43,22 +43,22 @@ if (!module.parent) {
     var errors = [];
     var warnings = [];
 
-    var profile_input = params._.slice(0, 1).pop();
+    var profile_input = params._[0];
 
     if ([null, '--help', '-h', 'help'].indexOf(profile_input) > 0) {
         usage();
         process.exit(0);
     }
 
-    var nsurl = params._.slice(1, 2).pop();
-    var apisecret = params._.slice(2, 3).pop();
+    var nsurl = params._[1];
+    var apisecret = params._[2];
 
     if (!profile_input || !nsurl || !apisecret) {
         usage();
         process.exit(1);
     }
 
-    if (apisecret.length != 40) {
+    if (apisecret.indexOf('token=') !== 0 && apisecret.length != 40) {
         var shasum = crypto.createHash('sha1');
         shasum.update(String(apisecret));
         apisecret = shasum.digest('hex');
@@ -252,16 +252,25 @@ if (!module.parent) {
         }
 
         if (do_upload) {
+            var nsheaders = {
+                'Content-Type': 'application/json'
+            };
 
             console.log('Profile changed, uploading to Nightscout');
 
+            nsurl = nsurl + '/api/v1/profile';
+
+            if (apisecret.indexOf('token=') === 0) {
+                nsurl = nsurl + '?' + apisecret;
+            } else {
+                nsheaders['API-SECRET'] = apisecret;
+            }
+
             options = {
-                uri: nsurl + '/api/v1/profile/'
+                uri: nsurl
                 , json: true
                 , method: 'POST'
-                , headers: {
-                    'api-secret': apisecret
-                }
+                , headers: nsheaders
                 , body: upload_profile
             };
 

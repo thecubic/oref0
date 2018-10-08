@@ -51,19 +51,28 @@ function fileHM(file) {
 }
 
 if (!module.parent) {
+    var argv = require('yargs')
+        .usage('$0 <glucose.json> <iob.json> <current_basal_profile.json> <currenttemp.json> <requestedtemp.json> <enactedtemp.json> [meal.json]')
+        .demand(6)
+        .strict(true)
+        .help('help');
     
     var fs = require('fs');
 
-    var glucose_input = process.argv.slice(2, 3).pop()
-    var iob_input = process.argv.slice(3, 4).pop()
-    var basalprofile_input = process.argv.slice(4, 5).pop()
-    var currenttemp_input = process.argv.slice(5, 6).pop()
-    var requestedtemp_input = process.argv.slice(6, 7).pop()
-    var enactedtemp_input = process.argv.slice(7, 8).pop()
-    var meal_input = process.argv.slice(8, 9).pop()
+    var params = argv.argv;
+    var inputs = params._;
+
+    var glucose_input = inputs[0];
+    var iob_input = inputs[1];
+    var basalprofile_input = inputs[2];
+    var currenttemp_input = inputs[3];
+    var requestedtemp_input = inputs[4];
+    var enactedtemp_input = inputs[5];
+    var meal_input = inputs[6];
     
-    if (!glucose_input || !iob_input || !basalprofile_input || !currenttemp_input || !requestedtemp_input ) {
-        console.log('usage: ', process.argv.slice(0, 2), '<glucose.json> <iob.json> <current_basal_profile.json> <currenttemp.json> <requestedtemp.json> <enactedtemp.json> [meal.json]');
+    if (inputs.length > 7) {
+        argv.showHelp();
+        console.error('Too many arguments');
         process.exit(1);
     }
     
@@ -135,7 +144,7 @@ if (!module.parent) {
 
 //console.log("<!-- ");
 console.log( bgnow + requestedtemp.tick + " " + bgTime + ", "
-    + iob + "U -> " + requestedtemp.eventualBG + "-" + requestedtemp.snoozeBG + ", "
+    + iob + "U -> " + requestedtemp.eventualBG + ", "
     + tempstring + "U/hr @ " + temp_time
     + " " + reqtempstring
     + ", " + requestedtemp.reason + ", "
@@ -157,7 +166,7 @@ console.log("<body>");
         console.log("<h1>");
         console.log( bgnow + " " + tick + " at " + bgTime );
         console.log("<br>");
-        console.log( "IOB: " + iob + "U, eventually " + requestedtemp.eventualBG + "-" + requestedtemp.snoozeBG + " mg/dL" );
+        console.log( "IOB: " + iob + "U, eventually " + requestedtemp.eventualBG + " mg/dL" );
         console.log("<br>");
         //+ "Act: " + enactedstring
         //+ " at " + enactedat + "\n"
